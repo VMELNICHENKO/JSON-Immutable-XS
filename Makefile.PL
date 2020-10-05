@@ -11,5 +11,15 @@ write_makefile(
     SRC      => ['src', 'external'],
     INC      => '-Isrc -Iexternal',
     CCFLAGS  => '-Wall -Wextra',
-    OPTIMIZE => '-O2'
+    OPTIMIZE => '-O2',
+    META_MERGE => {
+        "meta-spec" => { version => 2 },
+        resources => {
+            repository => {
+                type => 'git',
+                url => 'git://github.com/VMELNICHENKO/JSON-Immutable-XS.git',
+                web => 'https://github.com/VMELNICHENKO/JSON-Immutable-XS',
+            },
+        },
+    },
 );
