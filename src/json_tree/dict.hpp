@@ -28,7 +28,7 @@ struct Undef {};
 struct Dict {
     Dict(){};
     Dict(panda::string& filename) { load_dict(filename); }
-    Dict(rapidjson::Value* node, rapidjson::Document::AllocatorType& allocator);
+    Dict(const rapidjson::Value& node, rapidjson::Document::AllocatorType& allocator);
     ~Dict(){};
 
     template <typename T>
@@ -46,8 +46,8 @@ struct Dict {
     }
     template <typename T>
     void parse_str(T str, const panda::string& filename = "") {
-        rapidjson::Document* doc = new rapidjson::Document();
-        rapidjson::ParseResult ok = doc->Parse(str.c_str());
+        rapidjson::Document doc = rapidjson::Document();
+        rapidjson::ParseResult ok = doc.Parse(str.c_str());
         if (!ok) {
             panda_log_error("\n\e[41m[Critical] JSON parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")\nFilename: " << filename << " \e[0m \n");
             std::cerr << "\n\e[41m[Critical] JSON parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")\nFilename: " << filename << " \e[0m \n";
@@ -62,20 +62,19 @@ struct Dict {
                       << str.substr(lstart, lend) << "\n-----==END==-------\n";
             exit(EXIT_FAILURE);
         }
-        rapidjson::Document::AllocatorType& a = doc->GetAllocator();
+        rapidjson::Document::AllocatorType& a = doc.GetAllocator();
 
-        if (doc->HasParseError() == true) {
-            panda_log_error("\n\e[41m[Critical]JSON parse error: " << rapidjson::GetParseError_En(doc->GetParseError()) << "(" << (unsigned)doc->GetErrorOffset() << ")\nFilename: " << filename << " \e[0m \n");
-            std::cerr << "\n\e[41m[Critical]JSON parse error: " << rapidjson::GetParseError_En(doc->GetParseError()) << "(" << (unsigned)doc->GetErrorOffset() << ")\nFilename: " << filename << " \e[0m \n";
+        if (doc.HasParseError() == true) {
+            panda_log_error("\n\e[41m[Critical]JSON parse error: " << rapidjson::GetParseError_En(doc.GetParseError()) << "(" << (unsigned)doc.GetErrorOffset() << ")\nFilename: " << filename << " \e[0m \n");
+            std::cerr << "\n\e[41m[Critical]JSON parse error: " << rapidjson::GetParseError_En(doc.GetParseError()) << "(" << (unsigned)doc.GetErrorOffset() << ")\nFilename: " << filename << " \e[0m \n";
             exit(EXIT_FAILURE);
         } else {
             this->process_node(doc, a);
         }
 
-        delete doc;
     }
     void load_dict(panda::string& filename);
-    void process_node(rapidjson::Value* node, rapidjson::Document::AllocatorType& allocator);
+    void process_node(const rapidjson::Value& node, rapidjson::Document::AllocatorType& allocator);
     bool is_empty() const {
         return this->value.index() == 0;
     }

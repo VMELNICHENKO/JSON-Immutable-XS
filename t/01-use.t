@@ -6,7 +6,13 @@ BEGIN {
    use_ok('JSON::Immutable::XS');
 };
 
+subtest strange_shit => sub {
+    my $d = JSON::Immutable::XS::parse('{"test": 42}');
+    is $d->get_value("test"), 42;
+};
+
 my $dict_obj = JSON::Immutable::XS->new('t/var/dict/test.json');
+
 
 subtest init => sub {
     isa_ok $dict_obj, 'JSON::Immutable::XS';

@@ -21,42 +21,42 @@ void Dict::load_dict(panda::string& filename) {
 }
 
 
-void Dict::process_node( rapidjson::Value* node, rapidjson::Document::AllocatorType& allocator ) {
-    switch ( node->GetType() ) {
+void Dict::process_node( const rapidjson::Value& node, rapidjson::Document::AllocatorType& allocator ) {
+    switch ( node.GetType() ) {
     case rapidjson::Type::kObjectType : {
         ObjectMap childs;
-        for ( auto itr = node->MemberBegin(); itr != node->MemberEnd(); ++itr ) {
+        for ( auto itr = node.MemberBegin(); itr != node.MemberEnd(); ++itr ) {
             panda::string hkey = panda::string(itr->name.GetString());
 
             rapidjson::Value val(rapidjson::Type::kObjectType);
 
             val.CopyFrom(itr->value, allocator);
-            childs.emplace( hkey, Dict( &val, allocator));
+            childs.emplace( hkey, Dict( val, allocator));
         }
         this->value = move(childs);
         break;
     }
     case rapidjson::Type::kArrayType : {
         std::vector<Dict> childs;
-        childs.reserve(node->Size());
-        for (auto itr = node->Begin(); itr != node->End(); ++itr) {
-            childs.push_back( Dict( itr, allocator ) );
+        childs.reserve(node.Size());
+        for (auto itr = node.Begin(); itr != node.End(); ++itr) {
+            childs.push_back( Dict( *itr, allocator ) );
         }
 
         this->value = std::move(childs);
         break;
     }
     case rapidjson::Type::kNumberType : {
-        if ( node->IsInt64() || node->IsInt() || node->IsUint() || node->IsUint64()  ){
-            this->value = (int64_t)node->GetInt64();
+        if ( node.IsInt64() || node.IsInt() || node.IsUint() || node.IsUint64()  ){
+            this->value = (int64_t)node.GetInt64();
             break;
         }
-        if ( node->IsDouble() ) {
-            this->value = node->GetDouble();
+        if ( node.IsDouble() ) {
+            this->value = node.GetDouble();
         }
         break;
     }
-    case rapidjson::Type::kStringType : { this->value = (panda::string)node->GetString(); break; }
+    case rapidjson::Type::kStringType : { this->value = (panda::string)node.GetString(); break; }
     case rapidjson::Type::kFalseType  : { this->value = false; break; }
     case rapidjson::Type::kTrueType   : { this->value = true ; break; }
     case rapidjson::Type::kNullType   : { break; }
@@ -149,7 +149,7 @@ void Dict::dump( uint32_t level) const {
         }, this->value );
 }
 
-Dict::Dict( rapidjson::Value* node, rapidjson::Document::AllocatorType& allocator ) {
+Dict::Dict( const rapidjson::Value& node, rapidjson::Document::AllocatorType& allocator ) {
     this->process_node( node, allocator );
 }
 

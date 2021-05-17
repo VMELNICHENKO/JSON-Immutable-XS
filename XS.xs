@@ -16,6 +16,12 @@ Dict * new(SV* CLASS, panda::string filename){
     RETVAL = new Dict(filename);
 }
 
+Dict* parse(const panda::string& str){
+    Dict* d = new Dict();
+    d->parse_str(str);
+    RETVAL = d;
+}
+
 void Dict::load_dict( panda::string filename )
 
 void Dict::dump() : const
