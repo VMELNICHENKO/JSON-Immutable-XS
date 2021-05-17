@@ -27,11 +27,54 @@ struct Undef {};
 
 struct Dict {
     Dict(){};
-    Dict(panda::string filename) { load_dict(filename); }
+    Dict(panda::string& filename) { load_dict(filename); }
     Dict(rapidjson::Value* node, rapidjson::Document::AllocatorType& allocator);
     ~Dict(){};
 
-    void load_dict(panda::string filename);
+    template <typename T>
+    static Dict make(const T& in) {
+        Dict out = Dict();
+        out.value = in;
+        return out;
+    }
+
+    template <typename T>
+    static Dict parse(T& in) {
+        Dict dict;
+        dict.parse_str(in);
+        return dict;
+    }
+    template <typename T>
+    void parse_str(T str, const panda::string& filename = "") {
+        rapidjson::Document* doc = new rapidjson::Document();
+        rapidjson::ParseResult ok = doc->Parse(str.c_str());
+        if (!ok) {
+            panda_log_error("\n\e[41m[Critical] JSON parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")\nFilename: " << filename << " \e[0m \n");
+            std::cerr << "\n\e[41m[Critical] JSON parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")\nFilename: " << filename << " \e[0m \n";
+
+            int lstart = ok.Offset() - 100;
+            if (lstart < 0) lstart = 0;
+            size_t lend = ok.Offset() + 100;
+            if (lend >= str.length()) lend = str.length() - 1;
+            panda_log_error("\n----==HERE==-----\n"
+                            << str.substr(lstart, lend) << "\n-----==END==-------\n");
+            std::cerr << "\n----==HERE==-----\n"
+                      << str.substr(lstart, lend) << "\n-----==END==-------\n";
+            exit(EXIT_FAILURE);
+        }
+        rapidjson::Document::AllocatorType& a = doc->GetAllocator();
+
+        if (doc->HasParseError() == true) {
+            panda_log_error("\n\e[41m[Critical]JSON parse error: " << rapidjson::GetParseError_En(doc->GetParseError()) << "(" << (unsigned)doc->GetErrorOffset() << ")\nFilename: " << filename << " \e[0m \n");
+            std::cerr << "\n\e[41m[Critical]JSON parse error: " << rapidjson::GetParseError_En(doc->GetParseError()) << "(" << (unsigned)doc->GetErrorOffset() << ")\nFilename: " << filename << " \e[0m \n";
+            exit(EXIT_FAILURE);
+        } else {
+            this->process_node(doc, a);
+        }
+
+        delete doc;
+    }
+    void load_dict(panda::string& filename);
     void process_node(rapidjson::Value* node, rapidjson::Document::AllocatorType& allocator);
     bool is_empty() const {
         return this->value.index() == 0;
@@ -85,6 +128,26 @@ struct Dict {
                          }},
                      this->value);
     }
+
+    bool exists(const panda::string& key) const {
+        return visit(overloaded{
+                         [&](const ObjectMap& m) -> bool {
+                             auto i = m.find(key);
+                             if (i == m.end()) return false;
+                             return true;
+                         },
+                         [&](const ObjectArr& a) -> bool {
+                             uint64_t i;
+                             auto [p, ec] = std::from_chars(key.data(), key.data() + key.size(), i);
+                             if (ec != std::errc() || i >= a.size()) return false;
+                             return true;
+                         },
+                         [](auto) -> bool {
+                             return false;
+                         }},
+                     this->value);
+    }
+
 
     //single key rvalue TODO: remove copypaste
     template <size_t size>
@@ -163,6 +226,27 @@ struct Dict {
                      this->value);
     }
 
+    bool exists(const std::initializer_list<panda::string>& keys, uint64_t index = 0) const {
+        if (index >= keys.size()) return true;
+
+        return visit(overloaded{
+                         [&](const ObjectMap& m) -> bool {
+                             auto i = m.find(*(keys.begin() + index));
+                             if (i == m.end()) return false;
+                             return i->second.exists(keys, index + 1);
+                         },
+                         [&](const ObjectArr& a) -> bool {
+                             panda::string key = *(keys.begin() + index);
+                             uint64_t i;
+                             auto [p, ec] = std::from_chars(key.data(), key.data() + key.size(), i);
+                             if (ec != std::errc() || i >= a.size()) return false;
+                             return a[i].exists(keys, index + 1);
+                         },
+                         [](auto) -> bool {
+                             return false;
+                         }},
+                     this->value);
+    }
     // template<typename Range>
     // const Dict* get( const Range& keys, uint64_t index = 0 ) const {
     //     if ( index >= keys.size() ) return this;

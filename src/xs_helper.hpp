@@ -4,7 +4,7 @@
 #include <xs/dict.h>
 #include <xs/export.h>
 
-#include <dict.hpp>  //rapidjson conflicts with perl macroses
+#include <json_tree/dict.hpp>  //rapidjson conflicts with perl macroses
 
 using namespace xs;
 using panda::string;

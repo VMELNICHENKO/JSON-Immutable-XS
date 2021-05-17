@@ -1,6 +1,6 @@
 #pragma once
 #include <xs.h>
-#include <dict.hpp>
+#include <json_tree/dict.hpp>
 using namespace json_tree;
 
 namespace xs {

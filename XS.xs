@@ -1,4 +1,4 @@
-#include <dict.hpp>
+#include <json_tree/dict.hpp>
 #include <xs_helper.hpp>
 #include <xs/export.h>
 #include <xs/dict.h>

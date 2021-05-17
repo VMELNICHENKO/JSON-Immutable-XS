@@ -1,15 +1,15 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <dict.hpp>
+#include "dict.hpp"
 
 namespace json_tree {
-void Dict::load_dict( panda::string  filename ) {
-    if ( filename.empty() ) return void();
+void Dict::load_dict(panda::string& filename) {
+    if (filename.empty()) return void();
 
     std::ifstream inFile(filename);
-    if ( inFile.fail() ) {
-        std::cerr << "\n\e[41m[Critical] ERROR: cannot open file: " << filename << "\e[0m\n";
+    if (inFile.fail()) {
+        std::cerr << "\n\e[41m[Critical] ERROR: cannot open file: " << filename << "\e[0m" << std::endl;
         exit(1);
     }
 
@@ -17,30 +17,9 @@ void Dict::load_dict( panda::string  filename ) {
     strStream << inFile.rdbuf();
     std::string str = strStream.str();
 
-    rapidjson::Document* doc = new rapidjson::Document();
-
-    rapidjson::ParseResult ok = doc->Parse(str.c_str());
-    if (!ok) {
-        std::cerr << "\n\e[41m[Critical] JSON parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")\nFilename: " << filename << " \e[0m \n";
-
-        size_t lstart = ok.Offset() - 100;
-        size_t lend = ok.Offset() + 100;
-        if ( lend >= str.length() ) lend = str.length() - 1;
-        std::cerr << "\n----==HERE==-----\n" << str.substr(lstart, lend) << "\n-----==END==-------\n";
-        exit( 1 );
-    }
-    rapidjson::Document::AllocatorType& a = doc->GetAllocator();
-
-    if(doc->HasParseError()==true) {
-        std::cerr << "\n\e[41m[Critical]JSON parse error: " << rapidjson::GetParseError_En(doc->GetParseError()) << "(" << (unsigned)doc->GetErrorOffset() << ")\nFilename: " << filename << " \e[0m \n";
-
-        exit(1);
-     } else {
-        this->process_node(doc, a);
-    }
-
-    delete doc;
+    this->parse_str(str, filename);
 }
+
 
 void Dict::process_node( rapidjson::Value* node, rapidjson::Document::AllocatorType& allocator ) {
     switch ( node->GetType() ) {
@@ -83,6 +62,12 @@ void Dict::process_node( rapidjson::Value* node, rapidjson::Document::AllocatorT
     case rapidjson::Type::kNullType   : { break; }
     }
 
+}
+
+panda::string Dict::to_str() const {
+    panda::string ret;
+    _to_str(ret);
+    return ret;
 }
 
 void Dict::_to_str(panda::string& out) const {
