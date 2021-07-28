@@ -45,6 +45,12 @@ struct Dict {
         return dict;
     }
     template <typename T>
+    static Dict parse(T&& in) {
+        Dict dict;
+        dict.parse_str(in);
+        return dict;
+    }
+    template <typename T>
     void parse_str(T str, const panda::string& filename = "") {
         rapidjson::Document doc = rapidjson::Document();
         rapidjson::ParseResult ok = doc.Parse(str.c_str());
