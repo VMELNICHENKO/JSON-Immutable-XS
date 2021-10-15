@@ -48,7 +48,7 @@ void Dict::process_node( const rapidjson::Value& node, rapidjson::Document::Allo
     }
     case rapidjson::Type::kNumberType : {
         if ( node.IsInt64() || node.IsInt() || node.IsUint() || node.IsUint64()  ){
-            this->value = (int64_t)node.GetInt64();
+            this->value = static_cast<int64_t>(node.GetInt64());
             break;
         }
         if ( node.IsDouble() ) {
