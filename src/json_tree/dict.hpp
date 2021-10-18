@@ -96,6 +96,13 @@ struct Dict {
             if (auto v_p = std::get_if<T>(&d->value)) return *v_p;
         return def_value;
     }
+    // template <typename T> bool set_value(const std::initializer_list<panda::string>& path, T new_value) {
+    //     if (auto d = get(path)) {
+    //         d->value = new_value;
+    //         return true;
+    //     }
+    //     return false;
+    // }
 
     template <typename T> constexpr std::add_pointer_t<const T> get_value(const panda::string& key) const {
         if (auto d = get(key)) return std::get_if<T>(&d->value);
@@ -107,6 +114,25 @@ struct Dict {
             if (auto v_p = std::get_if<T>(&d->value)) return *v_p;
         return def_value;
     }
+    template <typename T> bool set_value(const panda::string& key, T new_value) {
+        return visit(overloaded{[&](ObjectMap& m) -> bool {
+                                    auto i = m.find(key);
+                                    if (i == m.end()) return false;
+                                    i->second.value = new_value;
+                                    return true;
+                                },
+                                [&](ObjectArr& a) -> bool {
+                                    uint64_t i;
+                                    auto [p, ec] = std::from_chars(key.data(), key.data() + key.size(), i);
+                                    if (ec != std::errc() || i >= a.size()) return false;
+                                    a.at(i).value = new_value;
+                                    return true;
+                                },
+                                [](auto) -> bool { return false; }},
+                     this->value);
+
+    }
+
     // single key
     const Dict* get(const panda::string& key) const {
         return visit(overloaded{[&](const ObjectMap& m) -> const Dict* {
