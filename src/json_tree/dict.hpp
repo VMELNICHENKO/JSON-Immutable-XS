@@ -96,6 +96,18 @@ struct Dict {
             if (auto v_p = std::get_if<T>(&d->value)) return *v_p;
         return def_value;
     }
+    template <typename T, typename T1>
+    T get_value_or(const std::initializer_list<panda::string>& path, T def_value) const {
+        if (auto d = get(path)) {
+            if (auto v_p = std::get_if<T>(&d->value)) {
+                return *v_p;
+            } else if (auto v_p = std::get_if<T1>(&d->value)) {
+                return static_cast<T>(*v_p);
+            }
+        }
+        return def_value;
+    }
+
     // template <typename T> bool set_value(const std::initializer_list<panda::string>& path, T new_value) {
     //     if (auto d = get(path)) {
     //         d->value = new_value;
@@ -114,6 +126,17 @@ struct Dict {
             if (auto v_p = std::get_if<T>(&d->value)) return *v_p;
         return def_value;
     }
+
+    template <typename T, typename T1> T get_value_or(const panda::string& key, T def_value) const {
+        if (auto d = get(key)){
+            if (auto v_p = std::get_if<T>(&d->value)) {
+                return *v_p;
+            } else if (auto v_p = std::get_if<T1>(&d->value)) {
+                return static_cast<T>(*v_p);
+            }
+        }
+        return def_value;
+    }
     template <typename T> bool set_value(const panda::string& key, T new_value) {
         return visit(overloaded{[&](ObjectMap& m) -> bool {
                                     auto i = m.find(key);
@@ -130,7 +153,6 @@ struct Dict {
                                 },
                                 [](auto) -> bool { return false; }},
                      this->value);
-
     }
 
     // single key
