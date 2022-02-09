@@ -234,7 +234,7 @@ struct Dict {
                      this->value);
     }
 
-    auto get(const std::initializer_list<panda::string>& keys, uint64_t index = 0) const {
+    const Dict* get(const std::initializer_list<panda::string>& keys, uint64_t index = 0) const {
         if (index >= keys.size()) return this;
 
         return visit(overloaded{[&](const ObjectMap& m) -> const Dict* {
