@@ -18,15 +18,15 @@
 #include <panda/string_view.h>
 
 template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
+template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
 namespace json_tree {
 struct Undef {};
 
 struct Dict {
     Dict(){};
-    Dict(panda::string& filename) { load_dict(filename); }
-    Dict(const rapidjson::Value& node, rapidjson::Document::AllocatorType& allocator);
+    explicit Dict(panda::string& filename) { load_dict(filename); }
+    explicit Dict(const rapidjson::Value& node, rapidjson::Document::AllocatorType& allocator);
     ~Dict(){};
 
     template <typename T> static Dict make(const T& in) {
@@ -35,10 +35,10 @@ struct Dict {
         return out;
     }
 
-    Dict(const panda::string& s) { value = s; }
-    Dict(const int64_t& s) { value = s; }
-    Dict(const bool& s) { value = s; }
-    Dict(const double& s) { value = s; }
+    explicit Dict(const panda::string& s) { value = s; }
+    explicit Dict(const int64_t& s) { value = s; }
+    explicit Dict(const bool& s) { value = s; }
+    explicit Dict(const double& s) { value = s; }
 
     template <typename T> static Dict parse(T& in) {
         Dict dict;
@@ -85,6 +85,24 @@ struct Dict {
     void process_node(const rapidjson::Value& node, rapidjson::Document::AllocatorType& allocator);
     bool is_empty() const { return this->value.index() == 0; }
 
+    template <typename T> std::vector<T> to_vec() const {
+        std::vector<T> ret;
+        if (auto arr_p = this->get_value<Dict::ObjectArr>({})) {
+            ret.reserve(arr_p->size());
+            for (auto& e : *arr_p)
+                ret.push_back(e.get_value<T>({}));
+        }
+        return ret;
+    }
+
+    template <typename T> Dict from_vec(const std::vector<T>& vec) const {
+        Dict::ObjectArr ret;
+        ret.reserve(vec.size());
+        for (auto& e : vec)
+            ret.push_back(Dict::make<T>(e));
+        return Dict::make<Dict::ObjectArr>(ret);
+    }
+
     template <typename T>
     constexpr std::add_pointer_t<const T> get_value(const std::initializer_list<panda::string>& path) const {
         if (auto d = get(path)) return std::get_if<T>(&d->value);
@@ -128,7 +146,7 @@ struct Dict {
     }
 
     template <typename T, typename T1> T get_value_or(const panda::string& key, T def_value) const {
-        if (auto d = get(key)){
+        if (auto d = get(key)) {
             if (auto v_p = std::get_if<T>(&d->value)) {
                 return *v_p;
             } else if (auto v_p = std::get_if<T1>(&d->value)) {
@@ -140,7 +158,10 @@ struct Dict {
     template <typename T> bool set_value(const panda::string& key, T new_value) {
         return visit(overloaded{[&](ObjectMap& m) -> bool {
                                     auto i = m.find(key);
-                                    if (i == m.end()) return false;
+                                    if (i == m.end()) {
+                                        m.emplace(key, Dict::make<T>(new_value));
+                                        return true;
+                                    }
                                     i->second.value = new_value;
                                     return true;
                                 },
