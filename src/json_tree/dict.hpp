@@ -4,6 +4,7 @@
 #include <map>
 #include <variant>
 #include <vector>
+#include <set>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
@@ -327,6 +328,17 @@ struct Dict {
 
         return ret;
     }
+
+
+    void keys(std::set<panda::string>& acc) const {
+        if (this->value.index() != 1) return;
+
+        auto hval = std::get_if<ObjectMap>(&this->value);
+        for (auto it = hval->begin(); it != hval->end(); ++it) {
+            acc.emplace(it->first);
+        }
+    }
+
     panda::string to_str() const;
     void          dump(uint32_t level = 0) const;
 
