@@ -96,7 +96,7 @@ struct Dict {
         return ret;
     }
 
-    template <typename T> Dict from_vec(const std::vector<T>& vec) const {
+    template <typename T> static Dict from_vec(const std::vector<T>& vec) {
         Dict::ObjectArr ret;
         ret.reserve(vec.size());
         for (auto& e : vec)
@@ -344,6 +344,8 @@ struct Dict {
 
     using ObjectMap = std::map<panda::string, Dict>;
     using ObjectArr = std::vector<Dict>;
+    using Int = int64_t;
+    using String = panda::string;
 
     std::variant<Undef, ObjectMap, ObjectArr, panda::string, int64_t, double, bool> value;
 
